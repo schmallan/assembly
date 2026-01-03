@@ -7,13 +7,29 @@
 section .data
     title: db "TETRIS",0;
 
-    printW: equ 100
+    holdpiece: db 100;
+
+    printW: equ 40
     printH: equ 30
     printT: equ printW*printH
     printGrid: db printT dup '?';
 
-    score: dq 99999
+    textStayVal: equ 15
+    textStay: db 0
+
+    canHold: db 0
+
+    score: dq 0
     scoreMsg: db "SCORE:",0
+    holdMsg: db "HOLD:",0
+
+    lineClearMsgs: db "                          ",0, \
+                      "      <SINGLE! +100>      ",0, \
+                      "      <DOUBLE! +300>      ",0, \
+                      "      <TRIPLE! +500>      ",0, \
+                      "      <TETRIS! +800>      ",0, \
+                      "<BACK-2-BACK TETRIS +1200>",0,
+    
 
     numPieces: equ 7
 
@@ -22,6 +38,20 @@ section .data
 
     well: dq 4
     bagLeft: db numPieces
+
+    lineClearScores: dd 0, 100, 300, 500, 800, 1200
+    b2b: db 0
+
+    startMenu0: db "- CONTROLS -",0
+    startMenu1: db "press 'P' to start/pause",0
+    startMenu2: db "move: A, D",0
+    startMenu3: db "rotate: Q, E",0
+    startMenu4: db "soft drop: S",0
+    startMenu5: db "hard drop: SPACE",0
+    startMenu6: db "hold: W",0
+    startMenu7: db "press 'X' to exit",0
+
+    phantom: db 0 ;????? 
 
     playX: equ 4
     playY: equ 4
@@ -45,6 +75,7 @@ section .data
     pieceH: equ 5
     pieceT: equ pieceW*pieceH
     pieceGrid: db pieceT dup 2;pieceW dup pieceH dup 0
+    holdGrid: db pieceT dup 3
     
     printBuffer: db 50 dup 's';
 
@@ -78,37 +109,55 @@ main:
     mov rbp, rsp
     sub rsp, 10*16
 
-    call resetBlock 
-     call drawcanv
-    ;mov rcx, cyclecount
-    ;mov [rcx], 0
+    call drawcanv
+    call fillPlay
+    call newPiece
+    call resetCursor 
     call clearPlayGrid
 
-    mov rax, 3
-    mov rbx, 5
-    mov rcx, 1
-    mov rdx, playH
-    
+    tpaused:
+        call drawControls
+
+        mov rdx, printGrid
+        mov r8, printT
+        call printConsole
+
+
+    paused:
+        mov rax, 1
+        call addWell
+
+        call wait_
+        
+        
+        mov rcx, 'X'
+            call GetAsyncKeyState
+            cmp al, 0
+        jnz end
+
+
+        mov rcx, 'P'
+        call GetAsyncKeyState
+        cmp al, 0
+    jz paused
     call drawcanv
+    call fillPlay
+
 
     mainloop: 
         mov rcx, cyclecount
         mov rdx, [rcx]
         inc rdx
         mov [rcx], rdx
-
-        
-        mov rax, playX ;fill playarea
-            mov rbx, playY
-            mov rcx, simPlayW*2
-            mov rdx, simPlayH
-            mov r8, ' '
-        call fill
-
+    
         call wait_
+        call fillPlay
         call body
 
-            
+        mov rcx, 'P'
+        call GetAsyncKeyState
+        cmp al, 0
+        jnz tpaused
 
         mov rcx, 'X'
         call GetAsyncKeyState
@@ -116,13 +165,195 @@ main:
     jz mainloop
 
 
+    end:
+
     mov rax, 0
     mov rsp, rbp;
     pop rbp;
+
+ret
+
+drawControls:
+
+    mov rax, 2
+    mov rbx, 10
+
+    mov rdx, startMenu0
+    call printCanv
+    inc rbx
+    mov rdx, startMenu1
+    call printCanv
+    inc rbx
+    mov rdx, startMenu2
+    call printCanv
+    inc rbx
+    mov rdx, startMenu3
+    call printCanv
+    inc rbx
+    mov rdx, startMenu4
+    call printCanv
+    inc rbx
+    mov rdx, startMenu5
+    call printCanv
+    inc rbx
+    mov rdx, startMenu6
+    call printCanv
+    inc rbx
+    mov rdx, startMenu7
+    call printCanv
+    inc rbx
+
+    mov rax, 0
+    mov rbx, 0
+    mov rdx, phantom
+    call printCanv
+    ;??? WHY DOES THAT STUPID GREY THING KEEP APPEARING
+
+
+ret
+
+fillPlay:
+
+        mov rax, playX ;fill playarea
+            mov rbx, playY
+            mov rcx, simPlayW*2
+            mov rdx, simPlayH
+            mov r8, ' '
+        call fill
+ret
+
+addScore: ;rax in
+    mov rdx, score
+    add rax, [rdx]
+    mov [rdx], rax
+ret
+
+body:
+    ;reserve stack space
+        push rbp
+        mov rbp, rsp
+        sub rsp, 32*16
+    ;
+    call modTick
+
+    mov rax, 1
+    call addWell
+    
+    mov rax, cycle
+    mov rax, [rax]
+    cmp rax, 0
+    jnz be
+        call downtick
+    be:
+    
+    call movement
+    call drawGhost
+
+    mov rax, textStay
+    mov bl, [rax]
+    cmp bl, 0
+    jz tss
+
+    dec bl
+    mov [rax], bl
+    cmp bl, 0
+    jnz tss
+    
+        mov rax, 1
+        mov rbx, 25
+        mov rdx, lineClearMsgs
+        call printCanv
+
+    tss:
+    
+    mov rax, 27
+        mov rbx, 9
+        mov rdx, scoreMsg
+        call printCanv
+
+        mov rcx, score
+        mov rcx, [rcx]
+        call int2String
+
+        mov rax, 27
+        mov rbx, 10
+        mov rdx, printBuffer
+        call printCanv
+
+        
+
+        mov rax, 27
+        mov rbx, 4
+        mov rdx, holdMsg
+        call printCanv
+        
+        
+
+        
+       ; mov rax, 2
+       ; mov rbx, 25
+      ;  mov rdx, bag
+        ;call printCanv
+        
+       ; mov rdx, textStay
+       ; mov rcx, 0
+       ; mov cl, [rdx]
+        ;call int2String
+      ;  mov rax, 2
+     ;   mov rbx, 26
+        ;mov rdx, printBuffer
+    ;call printCanv
+
+    call drawHold
+
+    call drawGhostGrid
+
+    
+    call drawPlayGrid
+
+    mov rdx, printGrid
+    mov r8, printT
+    call printConsole
+
+    ;return stack space
+        mov rsp, rbp
+        pop rbp
+    ;
+ret
+
+drawHold:
+    mov rbx, holdpiece
+    mov rax, 0
+    mov al, [rbx]
+    mov r11, holdGrid
+    call genericLoadPiece
+
+    mov rax, 27
+    mov rbx, 5
+
+    push rax
+    push rbx
+    mov rcx, 8
+    mov rdx, 3
+    mov r8, 250
+    call fill
+    pop rbx
+    pop rax
+
+    ;call drawcanv
+    
+    inc rax
+    inc rbx
+    mov rcx, 178
+    mov r12, printW
+    mov r13, printGrid
+    mov r10, holdGrid
+    mov r14, 0
+    call genericDrawPiece
 ret
 
 checkRows:
-
+    push 0
     mov r8, 6
     cro:
         mov rax, 1
@@ -147,6 +378,10 @@ checkRows:
         
         cmp rcx, 0
         jnz crz
+            pop rax
+            inc rax
+            push rax
+
             ;fall rows here
             push r8
             sub r8, 2
@@ -159,6 +394,48 @@ checkRows:
         inc r8
     cmp r8, playH
     jl cro
+    pop rax
+
+    cmp rax, 0
+    jz crs
+    cmp rax, 4
+    jnz crn
+        mov rax, b2b
+        mov bl, [rax]
+        mov [rax], 1
+        mov rax, 4
+        cmp bl, 0
+        jz crs
+            mov rax, 5
+            jmp crs
+    crn:
+        mov rbx, b2b
+        mov [rbx], 0
+    crs:
+
+    push rax
+    mul rax, 4
+    mov rdx, lineClearScores
+    add rdx, rax
+    mov rax, 0
+    mov ax, [rdx]
+
+    call addScore
+    pop rax
+
+    cmp rax, 0
+    jz crs2
+        mul rax, 27
+        mov rdx, lineClearMsgs
+        add rdx, rax
+        mov rax, 1
+        mov rbx, 25
+        call printCanv
+
+        mov rax, textStay
+        mov [rax], textStayVal
+    crs2:
+
 ret
 
 debug:
@@ -304,92 +581,6 @@ modTick:
     mov [rax], rbx
 ret
 
-flipI:
-
-    mov rbx, pieceH
-    fio:
-    dec rbx
-
-        mov rax, pieceW/2
-        fii:
-        dec rax
-            push rax
-            push rbx
-            
-            mov rdx, pieceGrid
-            mov rcx, pieceW
-            call calcAdr
-            mov r8, rdx
-
-            pop rbx
-            pop rax
-            push rax
-            push rbx
-
-            mul rax, -1
-            add rax, pieceW-1
-            mov rcx, pieceW
-            mov rdx, pieceGrid
-            call calcAdr
-
-            mov r9b, [r8]
-            mov r10b, [rdx]
-            mov [rdx], r9b
-            mov [r8], r10b
-
-            pop rbx
-            pop rax
-        cmp rax, 0
-        jg fii
-
-    cmp rbx, 0
-    jg fio
-    
-ret
-
-flipZ:
-
-    mov rbx, pieceH
-    mov rax, pieceW-1
-    fzo:
-    dec rbx
-        push rax
-        fzi:
-        dec rax
-            push rax
-            push rbx
-            
-            mov rdx, pieceGrid
-            mov rcx, pieceW
-            call calcAdr
-            mov r8, rdx
-
-            pop rax  ;notice how i pop in the "wrong" order to flip the axis on purpose!!!
-            pop rbx
-            push rbx
-            push rax
-
-            mov rdx, pieceGrid
-            mov rcx, pieceW
-            call calcAdr
-            
-            mov r9b, [rdx]
-            mov r10b, [r8]
-            mov [r8], r9b
-            mov [rdx], r10b
-            
-            pop rbx
-            pop rax
-
-        cmp rax, 0
-        jg fzi
-        pop rax
-        dec rax
-
-    cmp rbx, 0
-    jg fzo
-    
-ret
 
 movement:
     ;reserve stack space
@@ -404,6 +595,10 @@ movement:
     cmp al, 0
     jz mdtsp
         spaceL:
+                
+            mov rax, 2
+            call addScore
+
             mov rax, 6
             call addWell
             
@@ -411,6 +606,25 @@ movement:
         cmp rax, 0
         jz spaceL
     mdtsp:
+
+    
+    mov rcx, 'W'
+    call GetAsyncKeyState
+    mov rbx, 1
+    cmp al, 0
+    jz mwz
+
+        mov rax, canHold
+        mov al, [rax]
+        cmp al, 0
+        jnz mwz
+        
+        call holdSwap
+
+        mov rax, canHold
+        mov [rax], 1
+
+    mwz:
 
     mov r12, 0
     mov r13, 0
@@ -449,6 +663,9 @@ movement:
         mov [rdx], 1;
         mov rax, 5
         call addWell
+
+        mov rax, 1
+        call addScore
     mdts:
     
 
@@ -491,13 +708,40 @@ movement:
     ;
 ret
 
-flipCCW:
-    call flipI
-    call flipZ
-ret
-flipCW:
-    call flipZ
-    call flipI
+holdSwap:
+
+        mov rax, holdpiece
+        mov rbx, currentPiece
+        mov rcx, [rax]
+        mov rdx, [rbx]
+        mov [rax], rdx
+        mov [rbx], rcx
+
+        cmp cl, 100
+        jnz hps
+
+            mov rcx, 0
+            call cursorDraw
+
+            call newPiece
+            call resetCursor
+
+        jmp hpe
+        hps:
+
+            push rcx
+                mov rcx, 0
+                call cursorDraw
+            pop rcx
+
+            mov rax, 0
+            mov al, cl
+            call loadPiece
+
+            call resetCursor
+            
+
+        hpe:
 ret
 
 checkCollision: ;al out
@@ -555,8 +799,8 @@ downtick:
     call genericDowntick
     cmp al, 0
     jz dtr
-        
-        call resetBlock
+        call newPiece
+        call resetCursor
         call checkRows
         mov rax, 1
     dtr:
@@ -569,16 +813,15 @@ genericDowntick:
     call updcursor
 ret
 
-resetBlock:
+newPiece:
+    call bagRandomize
+    call loadPiece
+ret
+
+resetCursor:
     
     mov rdx, cycle
     mov [rdx], 1;
-
-    ;mov rbx, currentPiece
-    call bagRandomize
-    ;mov [rbx], al
-    ;mov rax, 3
-    call loadPiece
 
     call modColor
 
@@ -586,6 +829,9 @@ resetBlock:
     mov [rdx], 5
     mov rdx, cursorY
     mov [rdx], 5
+
+    mov rax, canHold
+    mov [rax], 0
 
 ret
 
@@ -666,6 +912,10 @@ bagRandomize:
     add rcx, rax
     mov [rcx], 'X'
 
+    mov rcx, currentPiece
+    mov [rcx], 0
+    mov [rcx], al
+
     ;raxout
 ret
 
@@ -694,70 +944,6 @@ addWell: ;rax in toadd
     mov rbx, well
     add rax, [rbx]
     mov [rbx], rax
-ret
-
-body:    
-    ;reserve stack space
-        push rbp
-        mov rbp, rsp
-        sub rsp, 32*16
-    ;
-    call modTick
-
-    mov rax, 1
-    call addWell
-    
-    mov rax, cycle
-    mov rax, [rax]
-    cmp rax, 0
-    jnz be
-        call downtick
-    be:
-    
-    call movement
-    call drawGhost
-    
-    mov rax, 27
-        mov rbx, 4
-        mov rdx, scoreMsg
-    ; call printCanv
-
-        mov rcx, score
-        mov rcx, [rcx]
-        call int2String
-
-        mov rax, 27
-        mov rbx, 5
-        mov rdx, printBuffer
-        ;call printCanv
-        
-        mov rax, 2
-        mov rbx, 25
-        mov rdx, bag
-        call printCanv
-        
-        mov rdx, bagLeft
-        mov rcx, 0
-        mov cl, [rdx]
-        call int2String
-        mov rax, 2
-        mov rbx, 26
-        mov rdx, printBuffer
-    call printCanv
-
-    call drawGhostGrid
-
-    
-    call drawPlayGrid
-
-    mov rdx, printGrid
-    mov r8, printT
-    call printConsole
-
-    ;return stack space
-        mov rsp, rbp
-        pop rbp
-    ;
 ret
 
 drawGhost:
@@ -795,6 +981,8 @@ drawGhost:
     mov r12, simPlayW
     mov r13, ghostGrid
     mov rcx, 91
+    mov r10, pieceGrid
+    mov r14, 1
     call genericDrawPiece
 
     pop rax
@@ -807,11 +995,13 @@ ret
 drawPiece:
     mov r12, playW
     mov r13, playGrid
+    mov r10, pieceGrid
+    mov r14, 1
     call genericDrawPiece
 ret
 
 genericDrawPiece: ;rabx x, y, rcx col
-    mov r10, pieceGrid
+    ;mov r10, pieceGrid
     add r10, pieceT
 
     sub rax, 3
@@ -820,12 +1010,19 @@ genericDrawPiece: ;rabx x, y, rcx col
     mov r9, pieceH
     dpo:
         mov r8, pieceW
+
         dpi:
         
             push rax
             push rbx
             push rcx
             add rax, r8
+                    
+                cmp r14, 0
+                jnz dpspec2
+                    add rax, r8
+                dpspec2:
+
             add rbx, r9
             mov rcx, r12;playW
             mov rdx, r13;playGrid
@@ -839,6 +1036,14 @@ genericDrawPiece: ;rabx x, y, rcx col
             cmp al, 0
             jz dps
             mov [rdx], cl
+
+            cmp r14, 0
+            jnz dpspec
+                inc rdx
+                mov [rdx], cl
+            dpspec:
+
+
             dps:
 
             pop rbx
@@ -852,7 +1057,12 @@ genericDrawPiece: ;rabx x, y, rcx col
 ret
 
 
-loadPiece: ;rax piecenum
+loadPiece:
+    mov r11, pieceGrid
+    call genericLoadPiece
+ret
+
+genericLoadPiece: ;rax piecenum
 
     mul rax, 4
     mov rbx, blocks
@@ -861,7 +1071,7 @@ loadPiece: ;rax piecenum
     mov r8, pieceT
     lpf:
     dec r8
-        mov rbx, pieceGrid
+        mov rbx, r11
         add rbx, r8
         mov [rbx], 0
     cmp r8, 0
@@ -879,7 +1089,7 @@ loadPiece: ;rax piecenum
             mov rax, r8
             mov rbx, r9
             mov rcx, pieceW
-            mov rdx, pieceGrid
+            mov rdx, r11
             call calcAdr
             mov r10, rdx
 
@@ -902,6 +1112,8 @@ loadPiece: ;rax piecenum
     jg lpo
 
 ret
+
+
 
 drawcanv:
     
@@ -1013,6 +1225,10 @@ drawcanv:
 ret
 
 printCanv: ;rdx msg in, rax rbx x y, 
+    push rax
+    push rbx
+    push rdx
+
     push rdx
     call calcTz
 
@@ -1022,13 +1238,17 @@ printCanv: ;rdx msg in, rax rbx x y,
     pop r9
     ;rdx buffer loc, r8 print#, r9 string loc
     pcl:
-        mov r10, [r9]
+        mov r10b, [r9]
         mov [rdx], r10b
         inc rdx
         inc r9
     dec r8
     cmp r8, 0
     jg pcl
+
+    pop rdx
+    pop rbx
+    pop rax
 ret
 
 int2String: ;rcx in
@@ -1263,9 +1483,6 @@ drawGhostGrid:
     jl dggo
 ret
 
-
-
-
 calcTz: ;in rdx, out r8
 
     mov r8, 0
@@ -1278,3 +1495,99 @@ calcTz: ;in rdx, out r8
     dec r8
 
 ret
+
+;piece flipping
+    flipI:
+
+        mov rbx, pieceH
+        fio:
+        dec rbx
+
+            mov rax, pieceW/2
+            fii:
+            dec rax
+                push rax
+                push rbx
+                
+                mov rdx, pieceGrid
+                mov rcx, pieceW
+                call calcAdr
+                mov r8, rdx
+
+                pop rbx
+                pop rax
+                push rax
+                push rbx
+
+                mul rax, -1
+                add rax, pieceW-1
+                mov rcx, pieceW
+                mov rdx, pieceGrid
+                call calcAdr
+
+                mov r9b, [r8]
+                mov r10b, [rdx]
+                mov [rdx], r9b
+                mov [r8], r10b
+
+                pop rbx
+                pop rax
+            cmp rax, 0
+            jg fii
+
+        cmp rbx, 0
+        jg fio
+        
+    ret
+    flipZ:
+
+        mov rbx, pieceH
+        mov rax, pieceW-1
+        fzo:
+        dec rbx
+            push rax
+            fzi:
+            dec rax
+                push rax
+                push rbx
+                
+                mov rdx, pieceGrid
+                mov rcx, pieceW
+                call calcAdr
+                mov r8, rdx
+
+                pop rax  ;notice how i pop in the "wrong" order to flip the axis on purpose!!!
+                pop rbx
+                push rbx
+                push rax
+
+                mov rdx, pieceGrid
+                mov rcx, pieceW
+                call calcAdr
+                
+                mov r9b, [rdx]
+                mov r10b, [r8]
+                mov [r8], r9b
+                mov [rdx], r10b
+                
+                pop rbx
+                pop rax
+
+            cmp rax, 0
+            jg fzi
+            pop rax
+            dec rax
+
+        cmp rbx, 0
+        jg fzo
+        
+    ret
+    flipCCW:
+        call flipI
+        call flipZ
+    ret
+    flipCW:
+        call flipZ
+        call flipI
+    ret
+;<
