@@ -109,6 +109,9 @@ main:
     mov rbp, rsp
     sub rsp, 10*16
 
+    ;mov rdx, title
+    ;call printConsoleTz
+
     call drawcanv
     call fillPlay
     call newPiece
