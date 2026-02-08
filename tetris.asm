@@ -1,7 +1,11 @@
 ;include functions
-    extern GetStdHandle
-    extern WriteFile
     extern GetAsyncKeyState
+
+    extern printConsole
+    extern printConsoleTz
+    extern calcAdr
+    extern int2String
+    extern calcTz
 ;<
 
 section .data
@@ -103,6 +107,9 @@ section .data
 
 section .text
 global main
+
+
+
 
 main:
     push rbp
@@ -274,6 +281,7 @@ body:
         mov rdx, scoreMsg
         call printCanv
 
+        mov r10, printBuffer
         mov rcx, score
         mov rcx, [rcx]
         call int2String
@@ -1254,34 +1262,6 @@ printCanv: ;rdx msg in, rax rbx x y,
     pop rax
 ret
 
-int2String: ;rcx in
-    mov rbx, 0
-    mov rax, rcx
-    ;method without using the stack
-    pil: ;first find how many digits 
-    inc rbx
-    mov rdx, 0
-    mov r8, 10
-    div r8
-    cmp rax, 0
-    jg pil
-
-    mov rax, rcx
-    mov rcx, printBuffer
-    add rcx, rbx
-    mov [rcx], 0
-    dec rcx
-    pil2: ;then move to printBuffer
-    mov rdx, 0
-    mov r8, 10
-    div r8
-    mov [rcx], '0'
-    add [rcx], rdx
-    dec rcx
-    cmp rax, 0
-    jg pil2
-
-ret
 
 fill: ;rabcdx X,Y,W,H r8 tofill
     ;reserve stack space
@@ -1349,43 +1329,6 @@ genericfill: ;r13 W, r14 adr
     inc r11
     cmp r11, r12
     jl fO
-ret
-
-calcAdr: ;rabc X,Y,W rdx base; rdx out (adr)
-    mul rbx, rcx
-    add rbx, rax
-    add rdx, rbx
-ret
-
-printConsole:  ;rdx message pointer; r8 message length
-    push rbp
-    mov rbp, rsp
-    sub rsp, 10*16
-
-    mov rcx, -11
-    call GetStdHandle
-    mov rcx, rax
-    call WriteFile
-
-    mov rax, 0
-    mov rsp, rbp
-    pop rbp
-ret
-
-printConsoleTz:  ;rdx message pointer;
-    push rbp
-    mov rbp, rsp
-    sub rsp, 10*16
-
-    push rdx
-    call calcTz
-    pop rdx
-
-    call printConsole
-
-    mov rax, 0
-    mov rsp, rbp
-    pop rbp
 ret
 
 drawPlayGrid:
@@ -1486,18 +1429,9 @@ drawGhostGrid:
     jl dggo
 ret
 
-calcTz: ;in rdx, out r8
 
-    mov r8, 0
-    ptzl:
-        mov cl, [rdx]
-        inc rdx
-        inc r8
-    cmp cl, 0
-    jnz ptzl
-    dec r8
 
-ret
+
 
 ;piece flipping
     flipI:
