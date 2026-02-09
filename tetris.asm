@@ -6,6 +6,7 @@
     extern calcAdr
     extern int2String
     extern calcTz
+    extern hexDump
 ;<
 
 section .data
@@ -138,7 +139,6 @@ main:
         call addWell
 
         call wait_
-        
         
         mov rcx, 'X'
             call GetAsyncKeyState
