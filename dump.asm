@@ -52,7 +52,7 @@ regDump:
 
         call regLine
         mov r12, regBuffer
-        add r12, 35
+        add r12, 55
 
         mov rax, 0
         hexP:
@@ -70,10 +70,8 @@ regDump:
         cmp rax, 8
         jnz hexP
 
-
         add r12, 20
         mov [r12], 0
-        
 
         push r11
         mov rdx, regBuffer
