@@ -7,6 +7,7 @@
     extern int2String
     extern calcTz
     extern hexDump
+    extern sleep
 ;<
 
 section .data
@@ -100,7 +101,7 @@ section .data
 
     currentColor: db 1
 
-    cyclesPerTick: equ 12
+    cyclesPerTick: equ 50
     cycle: dq 0
 
     ;dup as you might guess repeats the expression!!! useful for defining large chunks of stuff.
@@ -494,21 +495,8 @@ rowFall:
 ret
 
 wait_:
-    mov rax, 100000000
-    waitloop:
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-    dec rax
-    cmp rax, 0
-    jg waitloop
+    mov rax, 10
+    call sleep
 ret
 
 movCursor: ;rabx in

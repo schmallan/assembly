@@ -1,22 +1,29 @@
-DEFAULT REL
 
 extern printConsole
 extern hexDump
 extern printLnTz
+extern GetLocalTime
 extern GetSystemTime
 extern printConsoleTz
 extern int2String
 extern GlobalMemoryStatusEx
 extern regDump
+extern WriteFile
+extern GetTickCount
+extern GetPhysicallyInstalledSystemMemory
 
+
+    extern GetStdHandle
+    extern WriteFile
+
+DEFAULT REL
 
 section .data
-
-pad: db 256 dup 0
+hello: db "hellooooooo",0
 struct: dw 8 dup 1
-poop: db 0
 
 section .bss
+lastStep: resb 8
 
 section .text
 global main
@@ -24,34 +31,12 @@ global main
 main:
     push rbp
     mov rbp, rsp
-    sub rsp, 32*16
+    sub rsp, 64*16
+    
+    mov rcx, hello
+    call regDump
 
-    ;[] use as memory address, just like array 
-
-   ; mov rax, 18446744073709551615 
-   ; mov rbx, -18446744073709551615 
-    mov rcx, struct
-    call GetSystemTime
-
-    ;mov rax, struct
-    ;mov rbx, 1
-    ;call hexDump
-
-    mov rbx, struct
-    lea rax, [rbx]
+    mov rax, 8
     mov rsp, rbp
     pop rbp
-ret
-
-time:
-
-    mov rdx, 0
-    mov rdx, struct
-    lea rcx, [rdx]
-    call GetSystemTime
-
-    mov rax, struct
-    mov rbx, 1
-    call hexDump
-
 ret

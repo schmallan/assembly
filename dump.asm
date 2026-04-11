@@ -365,3 +365,36 @@ letter2Hex: ;rdx in ;rcx pointer
     skip:
     mov [rcx], al
 ret
+
+
+
+
+    mov rax, tsW
+    mov rbx, tsH
+    call initCanvas
+    mov rcx, 0
+
+
+    mov rax, 0
+    mo:
+        push rax
+        ml:
+            push rax
+            push rbx
+            push rcx
+            
+            call ditherFill
+
+            pop rcx
+            pop rbx
+            pop rax
+            add rax, ditherWidth
+        cmp rax, (tsW-20)
+        jl ml
+        pop rax
+        inc rcx
+        add rbx, ditherHeight
+    cmp rbx, (tsH-20)
+    jl mo
+
+    call printCanvas

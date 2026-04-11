@@ -4,16 +4,19 @@
 
 section .data
     endl: db 10
+    buf: db 10 dup 0
 
 section .text
 
 global printConsole
+global printNum
 global printConsoleTz
 global calcAdr
 global int2String
 global calcTz
 global printLnTz
 global padInt2String
+
 
 
 printConsole:  ;rdx message pointer; r8 message length
@@ -29,6 +32,19 @@ printConsole:  ;rdx message pointer; r8 message length
     mov rax, 0
     mov rsp, rbp
     pop rbp
+ret
+
+printNum:
+    mov r10, buf
+    call int2String
+    mov rdx, buf
+    call calcTz
+    mov rdx, buf
+    add rdx, r8
+    mov [rdx], 10
+    mov rdx, buf
+    inc r8
+    call printConsole
 ret
 
 printConsoleTz:  ;rdx message pointer;

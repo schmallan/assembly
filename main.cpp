@@ -38,20 +38,18 @@ void hexdump(void *ptr, int buflen) {
 }
 
 int main() {
-    SYSTEMTIME john;
-    SYSTEMTIME *johnAddress = &john;
+    //string *ip;
+    //string pv = "hellobiden";
+    //intptr_t myVal = 0;
+    //ip = &pv;
+    //myVal = reinterpret_cast<intptr_t>(ip);
 
-    john.wYear = 1;
-    john.wMonth = 1;
-    john.wDayOfWeek = 1;
-    john. wDay = 1;
-    john.wHour = 1;
-    john.wMinute = 1;
-    john. wMilliseconds = 1;
-    
-    
+    long int pnum = 34359725040;
+    void* ptr = reinterpret_cast<void*>(pnum);
 
-    hexdump(johnAddress,128);
+    hexdump(ptr,32);
+    
+   // cout << myVal;  
 
     int n = 0;
     cin >> n;
