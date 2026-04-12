@@ -21,29 +21,11 @@ global ditherFill
 global calcAdrScreen
 global main
 
-drawLineIndic: ;rabcd x1 y1 x2 y2
-    push rax
-    push rbx
-    push rcx
-    push rdx
-    
-    push rcx
-    push rdx
-    call calcAdrScreen
-    mov [rdx], 'a'
-    pop rbx
-    pop rax
-    call calcAdrScreen
-    mov [rdx], 'b'
-
-    pop rdx
-    pop rcx
-    pop rbx
-    pop rax
-
-ret
-
 drawLine: ;rabcd x1 y1 x2 y2
+
+    push rbp
+    mov rbp, rsp
+    sub rsp, 32*16
     
     ;test which difference is larger. (draw along x axis or y axis?)
     mov r8, rcx
@@ -133,36 +115,185 @@ drawLine: ;rabcd x1 y1 x2 y2
     cmp r8, rcx
     jl dll
 
-    mov rax, 1
-    mov rbx, 1
-    call calcAdrScreen
-    mov al, '0'
-    add al, r11b
-    mov [rdx], al
-
+    mov rsp, rbp
+    pop rbp
 ret
 
-drawLineS: ;rabcd x1 y1 x2 y2
-    
-ret
 
 main:
     push rbp
     mov rbp, rsp
-    sub rsp, 64*16
+    sub rsp, 128*16
 
     mov rax, 100
     mov rbx, 50
     call initCanvas
 
-    mov rax, 20
-    mov rbx, 20
 
-    mov rcx, 14
-    mov rdx, 10
 
-    call drawLineIndic
-    call drawLine
+
+
+
+
+
+
+
+mov rax, 7
+mov rbx, 3
+mov rcx, 7
+mov rdx, 17
+call drawLine
+mov rax, 7
+mov rbx, 10
+mov rcx, 19
+mov rdx, 9
+call drawLine
+mov rax, 19
+mov rbx, 3
+mov rcx, 19
+mov rdx, 17
+call drawLine
+mov rax, 28
+mov rbx, 13
+mov rcx, 40
+mov rdx, 12
+call drawLine
+mov rax, 40
+mov rbx, 12
+mov rcx, 32
+mov rdx, 9
+call drawLine
+mov rax, 32
+mov rbx, 9
+mov rcx, 28
+mov rdx, 13
+call drawLine
+mov rax, 28
+mov rbx, 13
+mov rcx, 35
+mov rdx, 17
+call drawLine
+mov rax, 45
+mov rbx, 4
+mov rcx, 45
+mov rdx, 16
+call drawLine
+mov rax, 45
+mov rbx, 16
+mov rcx, 54
+mov rdx, 18
+call drawLine
+mov rax, 61
+mov rbx, 3
+mov rcx, 60
+mov rdx, 16
+call drawLine
+mov rax, 60
+mov rbx, 16
+mov rcx, 66
+mov rdx, 19
+call drawLine
+mov rax, 82
+mov rbx, 11
+mov rcx, 73
+mov rdx, 14
+call drawLine
+mov rax, 73
+mov rbx, 14
+mov rcx, 83
+mov rdx, 19
+call drawLine
+mov rax, 83
+mov rbx, 19
+mov rcx, 90
+mov rdx, 14
+call drawLine
+mov rax, 82
+mov rbx, 11
+mov rcx, 90
+mov rdx, 14
+call drawLine
+mov rax, 5
+mov rbx, 27
+mov rcx, 8
+mov rdx, 39
+call drawLine
+mov rax, 8
+mov rbx, 39
+mov rcx, 14
+mov rdx, 33
+call drawLine
+mov rax, 14
+mov rbx, 33
+mov rcx, 17
+mov rdx, 38
+call drawLine
+mov rax, 18
+mov rbx, 38
+mov rcx, 22
+mov rdx, 27
+call drawLine
+mov rax, 33
+mov rbx, 32
+mov rcx, 27
+mov rdx, 35
+call drawLine
+mov rax, 27
+mov rbx, 35
+mov rcx, 32
+mov rdx, 39
+call drawLine
+mov rax, 32
+mov rbx, 39
+mov rcx, 37
+mov rdx, 35
+call drawLine
+mov rax, 37
+mov rbx, 35
+mov rcx, 33
+mov rdx, 32
+call drawLine
+mov rax, 43
+mov rbx, 32
+mov rcx, 43
+mov rdx, 38
+call drawLine
+mov rax, 43
+mov rbx, 34
+mov rcx, 51
+mov rdx, 32
+call drawLine
+mov rax, 60
+mov rbx, 26
+mov rcx, 59
+mov rdx, 37
+call drawLine
+mov rax, 59
+mov rbx, 37
+mov rcx, 66
+mov rdx, 40
+call drawLine
+mov rax, 80
+mov rbx, 34
+mov rcx, 74
+mov rdx, 36
+call drawLine
+mov rax, 74
+mov rbx, 36
+mov rcx, 76
+mov rdx, 39
+call drawLine
+mov rax, 76
+mov rbx, 39
+mov rcx, 81
+mov rdx, 39
+call drawLine
+mov rax, 81
+mov rbx, 39
+mov rcx, 81
+mov rdx, 25
+call drawLine
+
 
     call printCanvas    
     
