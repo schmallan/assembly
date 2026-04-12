@@ -5,7 +5,7 @@ section .data
     screenH: dq 0
     screenT: dq 0
     ditherset: db " ", 176,177,178,"???????????????????"; db " `.-':_,^=><+rc?sLTv",40,"J7",41,"|Fi",123,125,"CfI31tlu",91,"neoZ5Yxjya",93,"2ESw",176,"qkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@",177,178
-    screen: db 260000 dup '.' ;max total canvas size.
+    screen: db 400*400*32 dup "." ;max total canvas size.
     ;ditherset: db ' ', 176, 177, 178, '?'
     ditherPattern: db 1,1,13,13,4,4,16,16,9,9,5,5,12,12,8,8,3,3,15,15,2,2,14,14,11,11,7,7,10,10,6,6
     ditherHeight: equ 4
@@ -18,16 +18,166 @@ section .text
 global initCanvas
 global printCanvas
 global ditherFill
+global calcAdrScreen
+global main
 
-;a canvas that can display brightness values 0->127
+drawLineIndic: ;rabcd x1 y1 x2 y2
+    push rax
+    push rbx
+    push rcx
+    push rdx
+    
+    push rcx
+    push rdx
+    call calcAdrScreen
+    mov [rdx], 'a'
+    pop rbx
+    pop rax
+    call calcAdrScreen
+    mov [rdx], 'b'
+
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+
+ret
+
+drawLine: ;rabcd x1 y1 x2 y2
+    
+    ;test which difference is larger. (draw along x axis or y axis?)
+    mov r8, rcx
+    sub r8, rax
+    cmp rax, rcx
+    jl dlsx
+        mov r8, rax
+        sub r8, rcx
+    dlsx: 
+
+    mov r10, rdx
+    sub r10, rbx
+    cmp rbx, rdx
+    jl dlsy
+        mov r10, rbx
+        sub r10, rdx ;(beware the curse of register 9)
+    dlsy: 
+    ;r10 is abs(dy), r8 is abs(dx)
+    mov r11, 0
+    cmp r10, r8
+    jl dlss ;if dy>dx, swap dy and dx. (swap back at the end.)
+        xor rax, rbx 
+        xor rbx, rax 
+        xor rax, rbx
+
+        xor rcx, rdx
+        xor rdx, rcx
+        xor rcx, rdx        
+
+        ;swap back flag
+        mov r11, 1
+    dlss:
+
+
+    cmp rax, rcx ;make sure than the ab registers contain the leftmost point.
+    jl dls
+
+        xor rax, rcx ;swap the points
+        xor rcx, rax ;xor swap!!!
+        xor rax, rcx
+
+        xor rbx, rdx
+        xor rdx, rbx
+        xor rbx, rdx        
+    dls:
+
+
+    push rcx
+
+    ;calculate the slope in xmm0 (rise/run)
+    ;"ConVert Signed Integer to Scalar Double precision (64 bit fp)"
+    sub rcx, rax
+
+    cvtsi2sd xmm1, rcx ;dX
+    mov rcx, rdx
+    sub rcx, rbx
+    cvtsi2sd xmm0, rcx ;dY
+    divsd xmm0,xmm1
+
+    ;mov rcx, 1
+    ;cvtsi2sd xmm0, rcx
+
+    ;convert y1 to fp in xmm1
+    cvtsi2sd xmm1, rbx
+
+    pop rcx
+    mov r8, rax
+    
+    dll:
+        push rcx
+        addsd xmm1, xmm0
+        inc r8
+        cvttsd2si r10, xmm1
+
+        mov rax, r8
+        mov rbx, r10
+
+        cmp r11, 0
+        jz dlflip
+            mov rax, r10
+            mov rbx, r8
+        dlflip:
+        
+        call calcAdrScreen
+        mov [rdx], 176
+        pop rcx
+    cmp r8, rcx
+    jl dll
+
+    mov rax, 1
+    mov rbx, 1
+    call calcAdrScreen
+    mov al, '0'
+    add al, r11b
+    mov [rdx], al
+
+ret
+
+drawLineS: ;rabcd x1 y1 x2 y2
+    
+ret
+
+main:
+    push rbp
+    mov rbp, rsp
+    sub rsp, 64*16
+
+    mov rax, 100
+    mov rbx, 50
+    call initCanvas
+
+    mov rax, 20
+    mov rbx, 20
+
+    mov rcx, 14
+    mov rdx, 10
+
+    call drawLineIndic
+    call drawLine
+
+    call printCanvas    
+    
+
+    mov rax, 0
+    mov rsp, rbp
+    pop rbp
+ret
+
+;a canvas that can display brightness values 0->127 using dithering
 ;each "pixel" is 8x4 characters wide.
-
 initCanvas: ;rax rbx W and H (quad word)
-    mul rax, 8
     mov rdx, screenW
     mov [rdx], rax
 
-    mul rbx, 4
     mov rdx, screenH
     mov [rdx], rbx
 
@@ -61,7 +211,7 @@ ret
 calcAdrScreen: ;rab X,Y rdx out (adr)
     mov rcx, screenW
     mov rcx, [rcx]
-    inc rcx
+    inc rcx ;add one for the endline
     mul rbx, rcx
     add rbx, rax
     mov rdx, screen
@@ -69,6 +219,7 @@ calcAdrScreen: ;rab X,Y rdx out (adr)
 ret
 
 ditherFill: ;rabx x y, rcx color (0-128)
+
     push rcx
     call calcAdrScreen
     pop rcx
@@ -118,3 +269,4 @@ ditherFill: ;rabx x y, rcx color (0-128)
     jl dfo
     
 ret
+
