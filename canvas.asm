@@ -3,6 +3,7 @@ extern mswait
 extern printNum
 extern deltaLast
 extern mysin
+extern mycos
 
 section .data
     screenW: dq 0
@@ -16,7 +17,7 @@ section .data
     ditherWidth: equ 8
     ditherLength: equ 16;ditherHeight*ditherWidth
 
-    myFloat: dd 0x3DCCCCCD
+    myFloat: dd 0x3C23D70A
 ; ditherPattern: db 1,25,7,31,2,26,8,32,17,9,23,15,18,10,24,16,5,29,3,27,6,30,4,28,21,13,19,11,22,14,20,12
 
 
@@ -165,8 +166,8 @@ main:
     mov rbp, rsp
     sub rsp, 128*16
 
-    mov rax, 100
-    mov rbx, 50
+    mov rax, 800
+    mov rbx, 200
     call initCanvas
 
     mov rax, 0
@@ -185,7 +186,7 @@ main:
         
         call mysin
         
-    mov rax, 10
+    mov rax, 50
     cvtsi2ss xmm2, rax
     mulss xmm0, xmm2
 
@@ -195,13 +196,13 @@ main:
     pop r8
     mov rax, r8
     push r8
-        add rbx, 25
+        add rbx, 100
         call calcAdrScreen
         mov [rdx], 177
 
     pop r8
     inc r8
-    cmp r8,60
+    cmp r8,790
     jl ml
 
     
