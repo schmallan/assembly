@@ -27,9 +27,10 @@ sinTable: dd \
 myFloat: dd 0x40000000
 
 section .text
-global main
+global mysin
+;global main
 
-sin: ;xmm0 scalar single precision in, xmm0 out
+mysin: ;xmm0 scalar single precision in, xmm0 out
     
     ;mod input so its from 0 - 2pi
 
@@ -42,32 +43,28 @@ sin: ;xmm0 scalar single precision in, xmm0 out
     mov rax, tableEntries ;get table entries into xmm1
     cvtsi2ss xmm1, eax
 
-    movss xmm6, xmm0 ;keep normalised input in xmm6 for later
-    
     ;multiply by #tableEntries to get the index
     ;maybe theres some way to bit shift floating point? probably doesn't matter.
     mulss xmm0, xmm1
 
     cvttss2si rax, xmm0 ;multiply this index by the size of a dword to get the address offset
-    push rax
-    pop rax
-
+    
     mul rax, 4
     mov rdx, sinTable
     add rdx, rax
-    movss xmm1, [rdx] ;floor table val of input (in xmm1) keep this
+    movss xmm1, [rdx] ;table val of input (in xmm1) keep this
 
     movss xmm0, xmm1
 ret
 
-main:
+maind:
     push rbp
     mov rbp, rsp
     sub rsp, 10*16
 
     mov rax, myFloat
     movss xmm0, [rax]
-    call sin
+    call mysin
 
     mov rax, 10000 ;debug
     cvtsi2ss xmm1, eax
