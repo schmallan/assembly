@@ -34,7 +34,7 @@ printConsole:  ;rdx message pointer; r8 message length
     pop rbp
 ret
 
-printNum:
+printNum: ;rcx in
     mov r10, buf
     call int2String
     mov rdx, buf

@@ -398,3 +398,39 @@ ret
     jl mo
 
     call printCanvas
+
+
+    add rdx, 4
+    movss xmm2, [rdx] ;ceiling table val of input
+
+;(tangent line approx.)
+    subss xmm2, xmm1 ;find the Y difference. (in xmm2)
+
+    mov rax, 1 ;find the normalised X difference. (in xmm4)
+    cvtsi2ss xmm4, rax
+    mov rax, tableEntries
+    cvtsi2ss xmm5, rax
+    divss xmm4, xmm5
+
+    ;calculate slope at this point. (in xmm2)
+    divss xmm2, xmm4
+
+    ;calculate normalised input mod 1/tableEntries
+    ;=input - (input*256)/256
+    movss xmm7, xmm6
+
+    mov rax, tableEntries
+    cvtsi2ss xmm3, rax
+    mulss xmm6, xmm3 ;input*256
+    cvttss2si rax, xmm6 ;floor
+    cvtsi2ss xmm6, rax
+    divss xmm6, xmm4 ;input*256/256
+    subss xmm7, xmm6 ;this is small delta X (in xmm7)
+
+    ;multiply by slope...
+    mulss xmm7, xmm2
+
+    ;add this to table result
+    addss xmm1, xmm7
+
+    movss xmm0, xmm1

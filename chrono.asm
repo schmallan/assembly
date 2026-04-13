@@ -12,6 +12,8 @@ el: db 10,0
 section .text
 global main
 global sleep
+global mswait
+global deltaLast
 
 
 sleep: ;rax in

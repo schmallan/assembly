@@ -1,4 +1,6 @@
 extern printConsole
+extern mswait
+extern deltaLast
 
 section .data
     screenW: dq 0
@@ -119,190 +121,80 @@ drawLine: ;rabcd x1 y1 x2 y2
     pop rbp
 ret
 
+rect: ;rabx x,y rcdx w,h r8 color
+    mov r11, r8
+    mov r8, rcx
+    mov r10, rdx
+    call calcAdrScreen
+
+    recto:
+        push rdx
+        mov rcx, r8
+        recti:
+            mov [rdx], r11b
+            inc rdx
+        dec rcx
+        cmp rcx, 0
+        jg recti
+        pop rdx
+        mov rax, screenW
+        add rdx, [rax]
+        inc rdx
+    dec r10
+    cmp r10, 0
+    jg recto
+ret
+
+cls: ;r8 color
+    mov rax, 0
+    mov rbx, 0
+    mov rcx, screenW
+    mov rcx, [rcx]
+    mov rdx, screenH
+    mov rdx, [rdx]
+    mov r11, r8
+    call rect
+ret
 
 main:
     push rbp
     mov rbp, rsp
     sub rsp, 128*16
 
-    mov rax, 100
+    mov rax, 300
     mov rbx, 50
     call initCanvas
 
+    mov rax, 0
+    ml:
+    push rax
 
 
+        mov rbx, 5
+        mov rcx, 70
+        mov rdx, 30
+        call drawLine
 
+        call printCanvas
 
+        mov r8, ' '        
+        call cls
 
+        wl:
+        mov rcx, 100
+        call deltaLast
+        cmp rax, 0
+        jz wl
 
-
-
-
-mov rax, 7
-mov rbx, 3
-mov rcx, 7
-mov rdx, 17
-call drawLine
-mov rax, 7
-mov rbx, 10
-mov rcx, 19
-mov rdx, 9
-call drawLine
-mov rax, 19
-mov rbx, 3
-mov rcx, 19
-mov rdx, 17
-call drawLine
-mov rax, 28
-mov rbx, 13
-mov rcx, 40
-mov rdx, 12
-call drawLine
-mov rax, 40
-mov rbx, 12
-mov rcx, 32
-mov rdx, 9
-call drawLine
-mov rax, 32
-mov rbx, 9
-mov rcx, 28
-mov rdx, 13
-call drawLine
-mov rax, 28
-mov rbx, 13
-mov rcx, 35
-mov rdx, 17
-call drawLine
-mov rax, 45
-mov rbx, 4
-mov rcx, 45
-mov rdx, 16
-call drawLine
-mov rax, 45
-mov rbx, 16
-mov rcx, 54
-mov rdx, 18
-call drawLine
-mov rax, 61
-mov rbx, 3
-mov rcx, 60
-mov rdx, 16
-call drawLine
-mov rax, 60
-mov rbx, 16
-mov rcx, 66
-mov rdx, 19
-call drawLine
-mov rax, 82
-mov rbx, 11
-mov rcx, 73
-mov rdx, 14
-call drawLine
-mov rax, 73
-mov rbx, 14
-mov rcx, 83
-mov rdx, 19
-call drawLine
-mov rax, 83
-mov rbx, 19
-mov rcx, 90
-mov rdx, 14
-call drawLine
-mov rax, 82
-mov rbx, 11
-mov rcx, 90
-mov rdx, 14
-call drawLine
-mov rax, 5
-mov rbx, 27
-mov rcx, 8
-mov rdx, 39
-call drawLine
-mov rax, 8
-mov rbx, 39
-mov rcx, 14
-mov rdx, 33
-call drawLine
-mov rax, 14
-mov rbx, 33
-mov rcx, 17
-mov rdx, 38
-call drawLine
-mov rax, 18
-mov rbx, 38
-mov rcx, 22
-mov rdx, 27
-call drawLine
-mov rax, 33
-mov rbx, 32
-mov rcx, 27
-mov rdx, 35
-call drawLine
-mov rax, 27
-mov rbx, 35
-mov rcx, 32
-mov rdx, 39
-call drawLine
-mov rax, 32
-mov rbx, 39
-mov rcx, 37
-mov rdx, 35
-call drawLine
-mov rax, 37
-mov rbx, 35
-mov rcx, 33
-mov rdx, 32
-call drawLine
-mov rax, 43
-mov rbx, 32
-mov rcx, 43
-mov rdx, 38
-call drawLine
-mov rax, 43
-mov rbx, 34
-mov rcx, 51
-mov rdx, 32
-call drawLine
-mov rax, 60
-mov rbx, 26
-mov rcx, 59
-mov rdx, 37
-call drawLine
-mov rax, 59
-mov rbx, 37
-mov rcx, 66
-mov rdx, 40
-call drawLine
-mov rax, 80
-mov rbx, 34
-mov rcx, 74
-mov rdx, 36
-call drawLine
-mov rax, 74
-mov rbx, 36
-mov rcx, 76
-mov rdx, 39
-call drawLine
-mov rax, 76
-mov rbx, 39
-mov rcx, 81
-mov rdx, 39
-call drawLine
-mov rax, 81
-mov rbx, 39
-mov rcx, 81
-mov rdx, 25
-call drawLine
-
-
-    call printCanvas    
-    
+    pop rax
+    and rax, 0xFF
+    inc rax
+    jmp ml
 
     mov rax, 0
     mov rsp, rbp
     pop rbp
 ret
-
 ;a canvas that can display brightness values 0->127 using dithering
 ;each "pixel" is 8x4 characters wide.
 initCanvas: ;rax rbx W and H (quad word)
@@ -328,8 +220,6 @@ initCanvas: ;rax rbx W and H (quad word)
     dec rbx
     cmp rbx, 0
     jg initloop
-
-
 ret
 
 printCanvas:
