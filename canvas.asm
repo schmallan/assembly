@@ -17,18 +17,18 @@ section .data
     ditherWidth: equ 8
     ditherLength: equ 16;ditherHeight*ditherWidth
 
-    myFloat: dd 0x3C23D70A
 ; ditherPattern: db 1,25,7,31,2,26,8,32,17,9,23,15,18,10,24,16,5,29,3,27,6,30,4,28,21,13,19,11,22,14,20,12
-
 
 section .text
 global initCanvas
 global printCanvas
 global ditherFill
 global calcAdrScreen
-global main
+global drawLine
+global cls
+;global main
 
-drawLine: ;rabcd x1 y1 x2 y2
+drawLine: ;rabcd x1 y1 x2 y2; r12 color
 
     push rbp
     mov rbp, rsp
@@ -117,7 +117,7 @@ drawLine: ;rabcd x1 y1 x2 y2
         dlflip:
         
         call calcAdrScreen
-        mov [rdx], 176
+        mov [rdx], r12b
         pop rcx
     cmp r8, rcx
     jl dll
@@ -159,68 +159,8 @@ cls: ;r8 color
     mov rdx, [rdx]
     mov r11, r8
     call rect
-ret
+ret 
 
-main:
-    push rbp
-    mov rbp, rsp
-    sub rsp, 128*16
-
-    mov rax, 400
-    mov rbx, 200
-    call initCanvas
-
-    mov rax, 0
-    cvtsi2ss xmm9, rax
-
-    mov r8, 0
-    ml: 
-        push r8
-
-        mov rax, myFloat
-        movss xmm10, [rax]
-
-        addss xmm9, xmm10
-
-        mov rax, 50
-        cvtsi2ss xmm6, rax
-
-        movss xmm0, xmm9
-        call mysin
-        mulss xmm0, xmm6
-        cvttss2si rbx, xmm0
-        movss xmm0, xmm9
-        call mycos
-        mulss xmm0, xmm6
-        cvttss2si rax, xmm0
-        
-
-        add rax, 100
-        mul rax, 2
-        add rbx, 100
-        push rax
-        push rbx
-            call calcAdrScreen
-            mov [rdx], 177
-        pop rbx
-        pop rax
-
-        mov rcx, 200
-        mov rdx, 100
-        call drawLine
-        
-        pop r8
-    inc r8
-    cmp r8,50
-    jl ml
-
-    
-    call printCanvas
-
-    mov rax, 0
-    mov rsp, rbp
-    pop rbp
-ret
 ;a canvas that can display brightness values 0->127 using dithering
 ;each "pixel" is 8x4 characters wide.
 initCanvas: ;rax rbx W and H (quad word)

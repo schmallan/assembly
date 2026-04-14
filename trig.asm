@@ -1,4 +1,5 @@
 extern printNum
+extern fpMOD
 
 section .data
 

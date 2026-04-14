@@ -4,7 +4,7 @@
 
 section .data
     endl: db 10
-    buf: db 10 dup 0
+    buf: db 30 dup 0
 
 section .text
 
@@ -16,8 +16,46 @@ global int2String
 global calcTz
 global printLnTz
 global padInt2String
+global printNumFPss
 
+printNumFPss: ;xmm0 in
+    ;print the integer bit.
+    cvttss2si rcx, xmm0
+    push rcx
+    mov r10, buf
+    call int2String
+    mov rdx, buf
+    call calcTz
+    add rdx, r8
 
+    ;mov rdx, buf
+    mov [rdx], '.' ;add decimal point
+    inc rdx
+    
+    pop rcx
+    cvtsi2ss xmm1, rcx
+    subss xmm0, xmm1
+    ;xmm0 has the fractional part.
+    mov rax, 100000
+    cvtsi2ss xmm1, rax
+    mulss xmm0, xmm1
+    cvttss2si rcx, xmm0 ;rcx has integer form of fractional part.
+
+  ;  mov rdx, buf
+    mov r10, rdx
+    mov rbx, 5 ;5 decimal places (10^5)
+    call padInt2String ;print the fractional part (padded), num and buffer are already in place
+    
+    mov rdx, buf
+    add rdx, r8
+    mov [rdx], 10
+    inc r8    
+
+    mov rdx, buf
+    add r8, 5 ;length of the whole thing
+    call printConsole
+
+ret
 
 printConsole:  ;rdx message pointer; r8 message length
     push rbp
