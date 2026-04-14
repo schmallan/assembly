@@ -79,17 +79,26 @@ drawLine: ;rabcd x1 y1 x2 y2; r12 color
         xor rbx, rdx        
     dls:
 
+   
 
-    push rcx
+    mov r15, rcx
 
     ;calculate the slope in xmm0 (rise/run)
     ;"ConVert Signed Integer to Scalar Single precision (64 bit fp)"
     sub rcx, rax
 
+     
+
+    ;make sure xmm1(rcx) is not zero.
+    cmp rcx, 0
+    jz retskip
+    
     cvtsi2ss xmm1, rcx ;dX
     mov rcx, rdx
     sub rcx, rbx
     cvtsi2ss xmm0, rcx ;dY
+
+
     divss xmm0,xmm1
 
     ;mov rcx, 1
@@ -98,7 +107,7 @@ drawLine: ;rabcd x1 y1 x2 y2; r12 color
     ;convert y1 to fp in xmm1
     cvtsi2ss xmm1, rbx
 
-    pop rcx
+    mov rcx, r15
     mov r8, rax
     
     dll:
@@ -121,6 +130,8 @@ drawLine: ;rabcd x1 y1 x2 y2; r12 color
         pop rcx
     cmp r8, rcx
     jl dll
+
+    retskip:
 
     mov rsp, rbp
     pop rbp
