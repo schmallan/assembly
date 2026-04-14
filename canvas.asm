@@ -83,29 +83,29 @@ drawLine: ;rabcd x1 y1 x2 y2
     push rcx
 
     ;calculate the slope in xmm0 (rise/run)
-    ;"ConVert Signed Integer to Scalar Double precision (64 bit fp)"
+    ;"ConVert Signed Integer to Scalar Single precision (64 bit fp)"
     sub rcx, rax
 
-    cvtsi2sd xmm1, rcx ;dX
+    cvtsi2ss xmm1, rcx ;dX
     mov rcx, rdx
     sub rcx, rbx
-    cvtsi2sd xmm0, rcx ;dY
-    divsd xmm0,xmm1
+    cvtsi2ss xmm0, rcx ;dY
+    divss xmm0,xmm1
 
     ;mov rcx, 1
-    ;cvtsi2sd xmm0, rcx
+    ;cvtsi2ss xmm0, rcx
 
     ;convert y1 to fp in xmm1
-    cvtsi2sd xmm1, rbx
+    cvtsi2ss xmm1, rbx
 
     pop rcx
     mov r8, rax
     
     dll:
         push rcx
-        addsd xmm1, xmm0
+        addss xmm1, xmm0
         inc r8
-        cvttsd2si r10, xmm1
+        cvttss2si r10, xmm1
 
         mov rax, r8
         mov rbx, r10
@@ -166,7 +166,7 @@ main:
     mov rbp, rsp
     sub rsp, 128*16
 
-    mov rax, 800
+    mov rax, 400
     mov rbx, 200
     call initCanvas
 
@@ -174,35 +174,44 @@ main:
     cvtsi2ss xmm9, rax
 
     mov r8, 0
-    ml:
-    push r8
+    ml: 
+        push r8
 
         mov rax, myFloat
         movss xmm10, [rax]
 
         addss xmm9, xmm10
 
+        mov rax, 50
+        cvtsi2ss xmm6, rax
+
         movss xmm0, xmm9
-        
         call mysin
-        
-    mov rax, 50
-    cvtsi2ss xmm2, rax
-    mulss xmm0, xmm2
-
-
+        mulss xmm0, xmm6
         cvttss2si rbx, xmm0
+        movss xmm0, xmm9
+        call mycos
+        mulss xmm0, xmm6
+        cvttss2si rax, xmm0
+        
 
-    pop r8
-    mov rax, r8
-    push r8
+        add rax, 100
+        mul rax, 2
         add rbx, 100
-        call calcAdrScreen
-        mov [rdx], 177
+        push rax
+        push rbx
+            call calcAdrScreen
+            mov [rdx], 177
+        pop rbx
+        pop rax
 
-    pop r8
+        mov rcx, 200
+        mov rdx, 100
+        call drawLine
+        
+        pop r8
     inc r8
-    cmp r8,790
+    cmp r8,50
     jl ml
 
     
