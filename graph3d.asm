@@ -4,20 +4,30 @@ extern calcAdrScreen
 extern printNumFPss
 extern drawLine
 extern printNumFPss
+extern mysin
+extern mycos
+extern cls
+extern deltaLast
+extern fpMOD
 
 section .data
-screenW: equ 200
-screenH: equ 100
+screenW: equ 400
+screenH: equ 160
 
-camOffX: dd 1.0
-camOffY: dd 1.0
-camOffZ: dd 1.0
+camOffX: dd 0
+camOffY: dd 0
+camOffZ: dd 50.0
 
+twoPI: dd 6.283
 
-zoom: dd 25.0
+zoom: dd 30.0
 focal: dd 2.0
+theta: dd 0.5
+theta2: dd 0.5
+thickness: equ 15
 
-myFloat: dd 0x3F2B851F
+myVal: dd 0.0
+myFloat: dd 0.02
 
 ;current number of points in the array.
 pointNum: dq -1
@@ -42,6 +52,37 @@ addpointDisplay: ;rbx index in.
     
     mul rbx, 8
     call addpoint
+
+ret
+
+rotpoint: ;turns the vector in xmm5 and xmm6 registers by angle in xmm7
+    
+    movss xmm0, xmm7 ; x = x*cos(a)-y*sin(a);
+    call mycos ;xmm0 = cos(a)
+    
+    mulss xmm0, xmm5 ;xmm8 = x*cos(a)
+    movss xmm8, xmm0 
+
+    movss xmm0, xmm7
+    call mysin ;xmm0 = sin(a)
+    
+    mulss xmm0, xmm6 ;xmm0 = y*cos(a)
+    subss xmm8, xmm0 ;xmm8 = x*cos(a)-y*sin(a)
+
+    movss xmm0, xmm7 ; y = x*sin(a)+y*cos(a);
+    call mysin ;xmm0 = cos(a)
+
+    mulss xmm0, xmm5
+    movss xmm9, xmm0
+    
+    movss xmm0, xmm7
+    call mycos
+    
+    mulss xmm0, xmm6
+    addss xmm9, xmm0 
+
+    movss xmm5, xmm8
+    movss xmm6, xmm9
 
 ret
 
@@ -79,6 +120,26 @@ cvtWorld2Display:
         push rax
             call retpointWorld
 
+            movss xmm13, xmm1
+            mov rax, theta ;rotate x-z axis
+            movss xmm7, [rax]
+            movss xmm5, xmm0
+            movss xmm6, xmm2
+            call rotpoint
+            movss xmm0, xmm5
+            movss xmm2, xmm6
+            movss xmm1, xmm13
+            
+            movss xmm13, xmm0
+            mov rax, theta2 ;rotate y-z axis
+            movss xmm7, [rax]
+            movss xmm5, xmm1
+            movss xmm6, xmm2
+            call rotpoint
+            movss xmm1, xmm5
+            movss xmm2, xmm6
+            movss xmm0, xmm13
+
             mov rax, focal
             movss xmm10, [rax]
 
@@ -86,9 +147,13 @@ cvtWorld2Display:
             movss xmm11, [rax]
             mov rax, camOffY
             movss xmm12, [rax]
+            mov rax, camOffZ
+            movss xmm13, [rax]
             
             addss xmm0, xmm11
             addss xmm1, xmm12
+            addss xmm2, xmm13
+
 
             mulss xmm0, xmm10
             divss xmm0, xmm2
@@ -105,21 +170,7 @@ cvtWorld2Display:
         dec rax
     cmp rax, 0
     jnl cvl
-ret
-
-
-printoutpt:
-    mov rax, pointNum
-    mov rax, [rax]
-    pvl:
-        push rax
-            call retpointWorld
-            call printNumFPss
-        pop rax
-    dec rax
-    cmp rax, 0
-    jnl pvl
-ret
+ret ;convert world point to display
 
 retpointWorld:
     mul rax, 12
@@ -127,12 +178,12 @@ retpointWorld:
     call retpoint
     add rdx, 4
     movss xmm2, [rdx]
-ret
+ret ;get world point at index into xmm012
 retpointDisplay:
     mul rax, 8
     mov rdx, displayPoints
     call retpoint
-ret
+ret ;get world point at index into xmm01
 retpoint: ;rax index, xmm012 xyz
    
     add rdx, rax
@@ -143,39 +194,354 @@ ret
 
 addPointsArr:
 
-    mov rax, 1
+
+
+    mov rax, -26
+    mov rbx, -22
+    mov rcx, -1
+    call addpointInt
+    mov rax, -26
+    mov rbx, -18
+    mov rcx, -1
+    call addpointInt
+    mov rax, -19
+    mov rbx, -16
+    mov rcx, -1
+    call addpointInt
+    mov rax, -19
+    mov rbx, 13
+    mov rcx, -1
+    call addpointInt
+    mov rax, -25
+    mov rbx, 15
+    mov rcx, -1
+    call addpointInt
+    mov rax, -25
+    mov rbx, 20
+    mov rcx, -1
+    call addpointInt
+    mov rax, 4
+    mov rbx, 20
+    mov rcx, -1
+    call addpointInt
+    mov rax, 5
+    mov rbx, 15
+    mov rcx, -1
+    call addpointInt
+    mov rax, -3
+    mov rbx, 13
+    mov rcx, -1
+    call addpointInt
+    mov rax, -3
+    mov rbx, 3
+    mov rcx, -1
+    call addpointInt
+    mov rax, 13
+    mov rbx, 3
+    mov rcx, -1
+    call addpointInt
+    mov rax, 26
+    mov rbx, -3
+    mov rcx, -1
+    call addpointInt
+    mov rax, 27
+    mov rbx, -16
+    mov rcx, -1
+    call addpointInt
+    mov rax, 12
+    mov rbx, -23
+    mov rcx, -1
+    call addpointInt
+
+    mov rax, -3
+    mov rbx, -17
+    mov rcx, -1
+    call addpointInt
+    mov rax, -3
+    mov rbx, -5
+    mov rcx, -1
+    call addpointInt
+    mov rax, 9
+    mov rbx, -3
+    mov rcx, -1
+    call addpointInt
+    mov rax, 13
+    mov rbx, -9
+    mov rcx, -1
+    call addpointInt
+    mov rax, 10
+    mov rbx, -15
+    mov rcx, -1
+    call addpointInt
+    ;s
+
+    mov rax, -26
+    mov rbx, -22
+    mov rcx, thickness
+    call addpointInt
+    mov rax, -26
+    mov rbx, -18
+    mov rcx, thickness
+    call addpointInt
+    mov rax, -19
+    mov rbx, -16
+    mov rcx, thickness
+    call addpointInt
+    mov rax, -19
+    mov rbx, 13
+    mov rcx, thickness
+    call addpointInt
+    mov rax, -25
+    mov rbx, 15
+    mov rcx, thickness
+    call addpointInt
+    mov rax, -25
+    mov rbx, 20
+    mov rcx, thickness
+    call addpointInt
+    mov rax, 4
+    mov rbx, 20
+    mov rcx, thickness
+    call addpointInt
+    mov rax, 5
+    mov rbx, 15
+    mov rcx, thickness
+    call addpointInt
+    mov rax, -3
+    mov rbx, 13
+    mov rcx, thickness
+    call addpointInt
+    mov rax, -3
+    mov rbx, 3
+    mov rcx, thickness
+    call addpointInt
+    mov rax, 13
+    mov rbx, 3
+    mov rcx, thickness
+    call addpointInt
+    mov rax, 26
+    mov rbx, -3
+    mov rcx, thickness
+    call addpointInt
+    mov rax, 27
+    mov rbx, -16
+    mov rcx, thickness
+    call addpointInt
+    mov rax, 12
+    mov rbx, -23
+    mov rcx, thickness
+    call addpointInt
+
+    mov rax, -3
+    mov rbx, -17
+    mov rcx, thickness
+    call addpointInt
+    mov rax, -3
+    mov rbx, -5
+    mov rcx, thickness
+    call addpointInt
+    mov rax, 9
+    mov rbx, -3
+    mov rcx, thickness
+    call addpointInt
+    mov rax, 13
+    mov rbx, -9
+    mov rcx, thickness
+    call addpointInt
+    mov rax, 10
+    mov rbx, -15
+    mov rcx, thickness
+    call addpointInt
+
+ret
+drawLinesArr:
+
+
+    mov r12, 177
+
+    mov rax, 0
     mov rbx, 1
-    mov rcx, 5
-    call addpointInt
-    mov rax, 1
-    mov rbx, -1
-    mov rcx, 5
-    call addpointInt
-    mov rax, -1
-    mov rbx, -1
-    mov rcx, 5
-    call addpointInt
-    mov rax, -1
+    call drawLinePoints
+    mov rax, 2
     mov rbx, 1
-    mov rcx, 5
-    call addpointInt
+    call drawLinePoints
+    mov rax, 3
+    mov rbx, 2
+    call drawLinePoints
+    mov rax, 3
+    mov rbx, 4
+    call drawLinePoints
     
-    mov rax, 1
+    mov rax, 4
+    mov rbx, 5
+    call drawLinePoints
+    mov rax, 5
+    mov rbx, 6
+    call drawLinePoints
+    mov rax, 6
+    mov rbx, 7
+    call drawLinePoints
+    mov rax, 7
+    mov rbx, 8
+    call drawLinePoints
+    mov rax, 9
+    mov rbx, 8
+    call drawLinePoints
+    mov rax, 9
+    mov rbx, 10
+    call drawLinePoints
+    mov rax, 10
+    mov rbx, 11
+    call drawLinePoints
+    mov rax, 11
+    mov rbx, 12
+    call drawLinePoints
+    mov rax, 13
+    mov rbx, 12
+    call drawLinePoints
+    mov rax, 13
+    mov rbx, 0
+    call drawLinePoints
+
+    mov rax, 14
+    mov rbx, 15
+    call drawLinePoints
+    mov rax, 15
+    mov rbx, 16
+    call drawLinePoints
+    mov rax, 16
+    mov rbx, 17
+    call drawLinePoints
+    mov rax, 17
+    mov rbx, 18
+    call drawLinePoints
+    mov rax, 18
+    mov rbx, 14
+    call drawLinePoints
+
+    ;s
+    
+    mov rax, 0+19
+    mov rbx, 1+19
+    call drawLinePoints
+    mov rax, 2+19
+    mov rbx, 1+19
+    call drawLinePoints
+    mov rax, 3+19
+    mov rbx, 2+19
+    call drawLinePoints
+    mov rax, 3+19
+    mov rbx, 4+19
+    call drawLinePoints
+    
+    mov rax, 4+19
+    mov rbx, 5+19
+    call drawLinePoints
+    mov rax, 5+19
+    mov rbx, 6+19
+    call drawLinePoints
+    mov rax, 6+19
+    mov rbx, 7+19
+    call drawLinePoints
+    mov rax, 7+19
+    mov rbx, 8+19
+    call drawLinePoints
+    mov rax, 9+19
+    mov rbx, 8+19
+    call drawLinePoints
+    mov rax, 9+19
+    mov rbx, 10+19
+    call drawLinePoints
+    mov rax, 10+19
+    mov rbx, 11+19
+    call drawLinePoints
+    mov rax, 11+19
+    mov rbx, 12+19
+    call drawLinePoints
+    mov rax, 13+19
+    mov rbx, 12+19
+    call drawLinePoints
+    mov rax, 13+19
+    mov rbx, 0+19
+    call drawLinePoints
+
+    mov rax, 14+19
+    mov rbx, 15+19
+    call drawLinePoints
+    mov rax, 15+19
+    mov rbx, 16+19
+    call drawLinePoints
+    mov rax, 16+19
+    mov rbx, 17+19
+    call drawLinePoints
+    mov rax, 17+19
+    mov rbx, 18+19
+    call drawLinePoints
+    mov rax, 18+19
+    mov rbx, 14+19
+    call drawLinePoints
+
+    ;l
+    
+    mov rax, 0
+    mov rbx, 19
+    call drawLinePoints
+    mov rax, 20
     mov rbx, 1
-    mov rcx, 7
-    call addpointInt
-    mov rax, 1
-    mov rbx, -1
-    mov rcx, 7
-    call addpointInt
-    mov rax, -1
-    mov rbx, -1
-    mov rcx, 7
-    call addpointInt
-    mov rax, -1
-    mov rbx, 1
-    mov rcx, 7
-    call addpointInt
+    call drawLinePoints
+    mov rax, 21
+    mov rbx, 2
+    call drawLinePoints
+    mov rax, 3
+    mov rbx, 22
+    call drawLinePoints
+    mov rax, 4
+    mov rbx, 23
+    call drawLinePoints
+    mov rax, 5
+    mov rbx, 24
+    call drawLinePoints
+    mov rax, 6
+    mov rbx, 25
+    call drawLinePoints
+    mov rax, 7
+    mov rbx, 26
+    call drawLinePoints
+    mov rax, 27
+    mov rbx, 8
+    call drawLinePoints
+    mov rax, 9
+    mov rbx, 28
+    call drawLinePoints
+    mov rax, 10
+    mov rbx, 29
+    call drawLinePoints
+    mov rax, 11
+    mov rbx, 30
+    call drawLinePoints
+    mov rax, 31
+    mov rbx, 12
+    call drawLinePoints
+    mov rax, 13
+    mov rbx, 32
+    call drawLinePoints
+
+    mov rax, 14
+    mov rbx, 33
+    call drawLinePoints
+    mov rax, 15
+    mov rbx, 34
+    call drawLinePoints
+    mov rax, 16
+    mov rbx, 35
+    call drawLinePoints
+    mov rax, 17
+    mov rbx, 36
+    call drawLinePoints
+    mov rax, 18
+    mov rbx, 37
+    call drawLinePoints
+    
     
 
 ret
@@ -207,6 +573,9 @@ drawLinePoints: ;rax rbx points.
     mul rax, 2 ;square display.
     mul rcx, 2
 
+    mul rbx, -1
+    mul rdx, -1
+
     add rax, screenW/2
     add rbx, screenH/2
     add rcx, screenW/2
@@ -217,64 +586,73 @@ drawLinePoints: ;rax rbx points.
 
 ret
 
+
 main:
     push rbp
     mov rbp, rsp
     sub rsp, 64*16
 
+
+    call addPointsArr
+
+    ml:
+        mov rcx, 5
+        call deltaLast
+        cmp al, 0
+        jz ml
+
+        
     mov rax, screenW
     mov rbx, screenH
     call initCanvas
 
-    call addPointsArr
-
-    ;call printoutpt
-    call cvtWorld2Display
-
-    mov r12, 177
-
-    mov rax, 0
-    mov rbx, 1
-    call drawLinePoints
-    mov rax, 2
-    mov rbx, 1
-    call drawLinePoints
-    mov rax, 3
-    mov rbx, 2
-    call drawLinePoints
-    mov rax, 3
-    mov rbx, 0
-    call drawLinePoints
+        mov r8, ' '
+        call cls
     
-    mov rax, 4
-    mov rbx, 5
-    call drawLinePoints
-    mov rax, 5
-    mov rbx, 6
-    call drawLinePoints
-    mov rax, 6
-    mov rbx, 7
-    call drawLinePoints
-    mov rax, 7
-    mov rbx, 4
-    call drawLinePoints
+        mov rax, myFloat
+        movss xmm1, [rax]
+        mov rax, myVal
+        movss xmm0, [rax]
+        addss xmm0, xmm1
 
-    mov rax, 0
-    mov rbx, 4
-    call drawLinePoints
-    mov rax, 1
-    mov rbx, 5
-    call drawLinePoints
-    mov rax, 2
-    mov rbx, 6
-    call drawLinePoints
-    mov rax, 3
-    mov rbx, 7
-    call drawLinePoints
-    
+        ;mod 2pi
+        mov rbx, twoPI
+        movss xmm1, [rbx]
+        call fpMOD
 
+        movss [rax], xmm0
 
-    call printCanvas
+        mov rax, myVal
+        movss xmm0, [rax]
+       ; call mysin
+       ; mov rax, twoPI
+       ; movss xmm1, [rax]
+       ; addss xmm0, xmm1
+        mov rax, theta
+        movss [rax], xmm0
+
+        mov rax, myVal
+        movss xmm0, [rax]
+        addss xmm0, xmm0
+        call mycos
+        mov rax, twoPI
+        movss xmm1, [rax]
+        addss xmm0, xmm1
+
+        mov rax, 2
+        cvtsi2ss xmm1, rax
+        divss xmm0, xmm1
+
+        mov rax, theta2
+        movss [rax], xmm0
+        
+
+        call cvtWorld2Display
+        call drawLinesArr
+        call printCanvas
+
+    jmp ml
+
 
     mov rax, 0
     mov rsp, rbp

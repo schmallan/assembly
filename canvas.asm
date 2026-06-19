@@ -1,9 +1,4 @@
 extern printConsole
-extern mswait
-extern printNum
-extern deltaLast
-extern mysin
-extern mycos
 
 section .data
     screenW: dq 0
@@ -24,9 +19,21 @@ global initCanvas
 global printCanvas
 global ditherFill
 global calcAdrScreen
+global printMem
 global drawLine
 global cls
 ;global main
+
+printMem: ;rdx loc, r8 string, r10 length
+    pml:
+        mov rax, [r8]
+        mov [rdx], al
+        dec r10
+        inc rdx
+        inc r8
+    cmp r10, 0
+    jg pml
+ret
 
 drawLine: ;rabcd x1 y1 x2 y2; r12 color
 
@@ -172,8 +179,6 @@ cls: ;r8 color
     call rect
 ret 
 
-;a canvas that can display brightness values 0->127 using dithering
-;each "pixel" is 8x4 characters wide.
 initCanvas: ;rax rbx W and H (quad word)
     mov rdx, screenW
     mov [rdx], rax

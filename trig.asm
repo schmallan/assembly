@@ -62,7 +62,7 @@ mysin: ;xmm0 scalar single precision in, xmm0 out
     ;multiply by #tableEntries to get the index
     ;maybe theres some way to bit shift floating point? probably doesn't matter.
     mulss xmm0, xmm1
-
+    
     cvttss2si rax, xmm0 ;multiply this index by the size of a dword to get the address offset
     
     mul rax, 4
